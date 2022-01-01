@@ -1,0 +1,150 @@
+#show {__ ENCH.tt __}
+
+#var class {ench}
+#var bag {bag.silk}
+#var bag2 {}
+#var bag3 {}
+#var qb {detrez.cube}
+#var death_mem {0}
+#macro {\C-r} {prep;mem}
+
+#act {You now follow %*.} { #if {$botting} {#var following 1; gsay pausing casting}}
+#act {You stop following %*.} { #if {$botting} {#var following 0; gsay UNpausing casting}}
+
+#act {< %1h/%2H %3v/%4V >} {
+    #var curr_health %1;
+    #var max_health %2;
+    #math {health_percentage} {$curr_health.0 * 100 / $max_health.0};
+    #format {health_percentage} {%d} {$health_percentage};
+    #format {health_percentage} {%+3s} {$health_percentage};
+    #if {$health_percentage > $last_health_percentage || $health_percentage < $last_health_percentage || $last_health_percentage == 200} {
+        #show {(<170>$health_percentage%<070>)} 1 -7;
+        #var last_health_percentage $health_percentage;
+    }
+}
+
+#act {< T: %* TC: %* E: %* EC: %* EP: %w P: %w >} {
+    #var in_combat 1;
+    #var enemy_position %5;
+    #var position %6;
+    #var current_tank %1;
+
+    #if {$travel} {go};
+
+    #if {"$position" != "std" && $tried_to_stand != 1} {stand;#var tried_to_stand 1};
+
+    #if {"%4" == "nasty wounds" || "%4" == "pretty hurt" || "%4" == "awful"} {#var near_death 1};
+
+    #if {$health_percentage < 30 && $botting} {
+        word;
+    }
+}
+
+#alias {ke} {
+    #send {};
+    #if {"%1" == "%w"} {t %1};
+}
+
+#sub {You have finished memorizing %1.} {<100>[<030>+ <060>_<160>_ <070>%1 <160>_<060>_<030> +<100>]<090>}
+
+#alias {pr} {prioritize %0}
+#alias {f} {forget %0}
+#alias {m} {mem %0}
+#alias {dopri} {prior blur;prior dragonscale}
+#alias dc {
+	#var docast 1;
+	#var tocast %0;
+	$tocast;
+}
+
+#alias dco {#var docast 0;#unvar tocast}
+#alias dca {#var docast 0;abort;#unvar tocast}
+
+#act {You don't have that spell memorized.} {
+    #if {$docast == 1} {
+		#unvar tocast;
+		#var docast 0;
+	};
+}
+
+#act {Nobody here by that name.} {
+    #if {$docast == 1} {
+		#unvar tocast;
+		#var docast 0;
+	};
+    #if {$botting} {gsay !see->you};
+}
+
+#act {You can't do this sitting!} {
+    st;
+    #if {$docast == 1} {
+		#unvar tocast;
+		#var docast 0;
+	};
+    #if {$botting} {gsay failedDUE2stun};
+}
+
+#act {Impossible! You can't concentrate enough!} {
+    #if {$docast == 1} {
+		#unvar tocast;
+		#var docast 0;
+	};
+    #if {$botting} {gsay failedDUE2cant-concentrate};
+}
+
+#act {You complete your spell...} {
+    #delay {1} {#if {$docast} {$tocast}};
+}
+
+#act {You start chanting...} {#var did_cast 1;} 
+
+#act {You abort your spell} {
+    #echo {%c%h} {red} { SPELL ABORTED };
+}
+
+#act {OH NO!  Something has gone wrong!  You feel lost!} {#if {$botting} {gsay failed relo..;prep}}
+#act {You have to be standing up to do that!} {#if {$botting} {emote ...}}
+#act {The world slows down around you!} {#var ts_up 1}
+#act {Time speeds up suddenly!} {#var ts_up 0; #if {$botting} {ts}}
+
+#act {You can't teleport there!} {#if {$botting} {gsay cannotTELEPORTthere}}
+
+#act {Your studies are complete.} {
+    #var did_cast 0;
+    #if {$botting} {
+        #if {!$ts_up} {ts};
+        #if {$death_mem} {
+            #var death_mem 0;
+            gsay finishedMYdeathMEM;
+        }
+    }
+}
+
+#alias {pwb} {#var pwbtarg %1;#send pwb $pwbtarg;}
+#act {^%0 is temporarily blinded by your word!} {gsay %0 ($pwbtarg) is temporarily blind!}
+#act {^%0 won't be seeing much in the near future..} {gsay %0 ($pwbtarg) is permanently blind! bahahah!}
+#act {^%0 gropes around, blinded after hearing Logol's word!} {gsay %0 ($pwbtarg) is permanently blind! bahahah!}
+
+#alias {gfr} {f relo;mem gate}
+#alias {rfg} {f gate;mem relo}
+#alias {dfg} {f aura of the griff;mem dragonscale}
+#alias {gfd} {f dragonscale;mem aura of the griff}
+#alias {pfb} {f power word blind;mem prism}
+#alias {bfp} {f prism;mem power word blind}
+#alias {dmem} {prior power word blind;prior globe of invul;prior fly;prior constrict;prior reduce;prior enlarge;prior levi;prior dispel magic;prior detect magic;prior detect invis;prior invis;prior haste;prior minor creat;prior blur;prior dragonscales;prior time stop;prior gate;prior relo}
+#alias {pb} {prior blur}
+#alias {pd} {prior dragonscale}
+
+#alias {ffl;} {say freezing flesh}
+#alias {slaad} {say demonic conjuration}
+#alias {word} {say my heavenly home}
+#alias {heal} {say flesh mends}
+
+#NOP // botting stuff
+
+#var botting 0;
+#var following 0;
+#var did_cast 0;
+#var ts_up 0;
+
+tbot;tbot;tbash;tbash;tfight;tfight;tloot;tloot;tasst;tdoors;tflee;

@@ -1,0 +1,111 @@
+#show {__ NEC.tt __}
+
+#var class {nec}
+#var bag {cache.goufa}
+#var bag2 {}
+#var bag3 {}
+#var qb {detrez.cube}
+#var death_mem {0}
+#macro {\C-r} {prep;mem}
+
+#alias {ffl} {say freezing flesh}
+#alias {pm} {say Protect me}
+#alias {rel} {say Release}
+#alias {slaad} {say demonic conjuration}
+
+#act {< %1h/%2H %3v/%4V |tsw %5|sbite %6| >} {
+    #var curr_health %1;
+    #var max_health %2;
+    #math {health_percentage} {$curr_health.0 * 100 / $max_health.0};
+    #format {health_percentage} {%d} {$health_percentage};
+    #format {health_percentage} {%+3s} {$health_percentage};
+    #if {$health_percentage > $last_health_percentage || $health_percentage < $last_health_percentage || $last_health_percentage == 200} {
+        #show {(<170>$health_percentage%<070>)} 1 -7;
+        #var $last_health_percentage $health_percentage;
+    };
+    #if {"%5" == "+"} {#var cd_tsw 0} {#var cd_tsw %5};
+    #if {"%6" == "+"} {#var cd_sbite 0} {#var cd_sbite %6};
+}
+
+#act {< T: %* TC: %* E: %* EC: %* EP: %w P: %w >} {
+    #var in_combat 1;
+    #var enemy_position %5;
+    #var position %6;
+    #var current_tank %1;
+
+    #if {$travel} {go};
+
+    #if {"$position" != "std" && $tried_to_stand != 1} {stand;#var tried_to_stand 1};
+
+    #if {"%4" == "nasty wounds" || "%4" == "pretty hurt" || "%4" == "awful"} {#var near_death 1};
+}
+
+#alias {ke} {
+    #send {};
+    #if {"%1" == "%w"} {t %1};
+    #if {!$cd_tsw} {tsw %1};
+}
+
+#sub {You have finished memorizing %1.} {<100><<170><<150>\\<050>_ <070>%1 <050>_<150>/<170>><100>><090>}
+
+#alias {sskin} {innate scaleskin}
+#alias {vmind} {innate vipermind}
+#alias {pr} {prioritize %0}
+#alias {f} {forget %0}
+#alias {m} {mem %0}
+#alias r {of rescue %1}
+#alias dc {
+	#var docast 1;
+	#var tocast %0;
+	$tocast;
+}
+
+#alias dco {#var docast 0;#unvar tocast}
+#alias dca {#var docast 0;abort;#unvar tocast}
+
+#act {You don't have that spell memorized.} {
+    #if {$docast == 1} {
+		#unvar tocast;
+		#var docast 0;
+	};
+}
+
+#act {Nobody here by that name.} {
+    #if {$docast == 1} {
+		#unvar tocast;
+		#var docast 0;
+	};
+}
+
+#act {You can't do this sitting!} {
+    st;
+    #if {$docast == 1} {
+		#unvar tocast;
+		#var docast 0;
+	};
+}
+
+#act {Impossible! You can't concentrate enough!} {
+    #if {$docast == 1} {
+		#unvar tocast;
+		#var docast 0;
+	};
+}
+
+#act {You complete your spell...} {
+    #delay {1} {#if {$docast} {$tocast}};
+}
+
+#act {You start chanting...} {#var did_cast 1;} 
+
+#act {You abort your spell} {
+    #echo {%c%h} {red} { SPELL ABORTED };
+}
+
+#nop #act {You have to be standing up to do that!} {#if {$botting} {emote ...}}
+
+#act {Your studies are complete.} {
+    #var did_cast 0;
+}
+
+tbot;tbot;tbash;tbash;tfight;tfight;tloot;tloot;tasst;tdoors;tflee;

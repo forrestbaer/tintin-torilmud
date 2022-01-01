@@ -1,0 +1,80 @@
+#show {__ ROGUE.tt loaded __}
+
+#var class {rogue}
+#var bag {bag.illithids}
+#var w1 {dagger.icy}
+#var w2 {horn.kirin}
+#var picks {lockpicks}
+
+#alias tpicks {
+    rem $w1;
+    g $picks;
+    hold $picks;
+}
+
+#act {< %1h/%2H %3v/%4V |fa %5| >} {
+    #var curr_health %1;
+    #var max_health %2;
+    #math {health_percentage} {$curr_health.0 * 100 / $max_health.0};
+    #format {health_percentage} {%d} {$health_percentage};
+    #format {health_percentage} {%+3s} {$health_percentage};
+    #if {$health_percentage > $last_health_percentage || $health_percentage < $last_health_percentage || $last_health_percentage == 200} {
+        #show {(<170>$health_percentage%<070>)} 1 -7;
+        #var $last_health_percentage $health_percentage;
+    }
+}
+
+#alias getglobe {.ne7s2wn;#5 {g bead};#5 {give bead 2.abjurer}}
+#alias getback {.s2e7nws;l in hole}
+
+#alias di {quaff indigo $bag}
+#alias invis {quaff iridescent $bag}
+
+#nop #act {You can't do that without solid ground underneath you!} { #if {$in_combat} {#var skip_bashing 1}; }
+#nop #act {You would pass right through them!} { #if {$in_combat} {#var skip_bashing 1}; }
+
+#act {< T: %* TC: %* E: %* EC: %* EP: %w P: %w >} {
+    #var in_combat 1;
+    #var enemy_position %5;
+    #var position %6;
+    #var current_tank %1;
+
+    #if {$travel} {go};
+
+    #if {"$position" != "std" && $tried_to_stand != 1} {stand;#var tried_to_stand 1};
+
+    #if {"%4" == "nasty wounds" || "%4" == "pretty hurt" || "%4" == "awful"} {#var near_death 1};
+    #if {$auto_assist} {
+        #tick {fight} {
+            #if {!$in_combat} {#untick fight};
+            #show {... circling!}; cr;
+        } {3};
+    }
+}
+
+#alias {ke} {
+    #send {};
+    #if {"%1" == "%w"} {t %1};
+    kill $target;
+}
+
+#alias eskn {esk n}; #alias esks {esk s}; #alias eskw {esk w}; #alias eske {esk e}; #alias esku {esk u}; #alias eskd {esk d};
+#alias esk {    
+    #var edir @upfirst{%1};
+    esc $edir;
+    @revdir{$edir};
+    cr $target;
+}
+
+#alias be {
+    #if {"%1" == "%w"} {t %1};
+    bs $target;
+}
+
+#alias ap {
+    #if {"%1" == "para"} {g3 manticore;apply manticore avenger;p3 manticore};
+    #if {"%1" == "ray"} {g3 viscous;apply viscous avenger;p3 viscous};
+    #if {"%1" == "slow"} {g3 manta;apply manta avenger;p3 manta};
+}
+
+tdoors; tbot; tbot; tbash; tbash; tfight; tfight; tasst; tloot; tflee;

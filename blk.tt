@@ -1,0 +1,134 @@
+#show {__ BLK.tt loaded __}
+
+#var class {blk}
+#var bag {portable.hole}
+#var bag2 {bag.silk}
+#var bag3 {bag.gut}
+#var qb {detrez.cube}
+#macro {\C-r} {rescue $current_tank}
+
+#alias earth {rem girdle.dragonhide;g girdle.studs;wear girdle.studs;say strength of stone;rem girdle.studs;p girdle.studs;wear girdle.dragonhide}
+
+#act {< %1h/%2H %3v/%4V |vs %5|sot %6|bc %7|drs %8|ss %9|md %10|sph %14|fr %15|uf %16| |%11|%12|%13|%17|%18| >} {
+    #var curr_health %1;
+    #var max_health %2;
+    #math {health_percentage} {$curr_health.0 * 100 / $max_health.0};
+    #format {health_percentage} {%d} {$health_percentage};
+    #format {health_percentage} {%+3s} {$health_percentage};
+    #if {$health_percentage > $last_health_percentage || $health_percentage < $last_health_percentage || $last_health_percentage == 200} {
+        #show {(<170>$health_percentage%<070>)} 1 -7;
+        #var last_health_percentage $health_percentage;
+    }
+    #if {"%5" == "+"} {#var cd_vs 0} {#var cd_vs %5};
+    #if {"%6" == "+"} {#var cd_sot 0} {#var cd_sot %6};
+    #if {"%8" == "+"} {#var cd_drs 0} {#var cd_drs %8};
+    #if {"%9" == "+"} {#var cd_ss 0} {#var cd_ss %9};
+    #if {"%10" == "+"} {#var cd_md 0} {#var cd_md %10};
+    #if {"%14" == "+"} {#var cd_sph 0} {#var cd_sph %14};
+    #if {"%16" == "+"} {#var cd_uf 0} {#var cd_uf %16};
+    #var spells_first %11;
+    #var spells_second %12;
+    #var spells_third %13;
+    #var spells_fourth %17;
+    #var spells_fifth %18;
+}
+
+#alias relo {say Relocate %1}
+#alias be {
+    #if {"%1" == "%w"} {t %1};
+    ss $target;
+}
+#alias di {quaff indigo $bag}
+#alias vit {quaff vitality $bag}
+#alias tele {g teleportation;recite teleportation}
+#alias invis {quaff iridescent $bag}
+
+#act {You can't do that without solid ground underneath you!} { #if {$in_combat} {#var skip_bashing 1}; }
+#act {You would pass right through them!} { #if {$in_combat} {#var skip_bashing 1}; }
+
+#act {< T: %* TC: %* E: %* EC: %* EP: %w P: %w >} {
+    #var in_combat 1;
+    #var enemy_position %5;
+    #var position %6;
+    #var current_tank %1;
+
+    #if {$travel} {go};
+
+    #if {"$position" != "std" && $tried_to_stand != 1} {stand;#var tried_to_stand 1};
+
+    #if {"%4" == "nasty wounds" || "%4" == "pretty hurt" || "%4" == "awful"} {#var near_death 1};
+
+    #if {$auto_fight} {
+        #tick {fight} {
+            #if {!$in_combat} {#untick fight};
+            #if {!$cd_sot && $health_percentage < 40} {sot} {
+                #if {"$enemy_position" == "std" && !$cd_ss && !$skip_bashing} {ss} {
+                    #if {$spells_second && $health_percentage < 60} {sh} {
+                        #if {!$death_aura && $spells_fifth && $health_percentage < 70} {ad;#var death_aura 1;#tick {daura} {#var death_aura 0;#untick daura} {90}} {
+                            #if {!$cd_sph} {sph} {
+                                #if {!$cd_uf} {uf} {
+                                    #if {!$cd_drs} {drs} {
+                                        #if {!$cd_md} {md} {
+                                            #if {!$cd_vs} {vs}; 
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } 
+                }
+            }
+        } {1.5};
+    }
+}
+
+#macro {\C-f} {
+    #if {!$cd_sot && $health_percentage < 40} {sot} {
+        #if {$spells_second && $health_percentage < 60} {sh} {
+            #if {!$cd_sph} {sph agg} {
+                #if {"$enemy_position" == "std" && !$cd_ss && !$skip_bashing} {ss agg} {
+                    #if {!$cd_uf} {uf agg} {
+                        #if {!$cd_drs} {drs agg} {
+                            #if {!$cd_md} {md agg} {
+                                #if {!$cd_vs} {vs agg}; 
+                            }
+                        }
+                    }
+                }
+            } 
+        }
+    }
+}
+
+#alias {ke} {
+    #send {};
+    #if {"%1" == "%w"} {t %1};
+    #if {!$cd_ss} {ss $target} {kill $target};
+}
+
+#alias ap {
+    #if {"%1" == "para"} {g3 manticore;apply manticore avenger;p3 manticore};
+    #if {"%1" == "ray"} {g3 goop;apply goop avenger;p3 goop};
+    #if {"%1" == "slow"} {g3 manta;apply manta avenger;p3 manta};
+    #if {"%1" == "blind"} {g3 viscous.sap;apply viscous.sap avenger;p3 viscous.sap};
+}
+
+#alias count {
+    #var thecount 5;
+    #var target %1;
+    #var targetdir %2;
+
+    #tick {killcount} {
+        #if {$thecount == 0} {
+            #send {movealone $targetdir};
+            kill $target;
+            sos;
+            #untick killcount;
+        } {
+            gsay going --> ( $targetdir ) to attack $target in ... $thecount;
+            #math thecount {$thecount - 1};
+        }
+    } {1}
+}
+
+tbash; tbash; tfight; tasst; tloot; tloot; tbot; tbot; tdoors; tflee;

@@ -1,0 +1,56 @@
+#var travel 0
+
+#function revdir
+{
+     #if {"%1" == "N"} {#var result S};
+     #if {"%1" == "E"} {#var result W};
+     #if {"%1" == "S"} {#var result N};
+     #if {"%1" == "W"} {#var result E};
+     #if {"%1" == "U"} {#var result D};
+     #if {"%1" == "D"} {#var result U};
+}
+
+#alias go {
+     #if {$travel}
+     {
+          #var travel 0;
+          #show <100>[_ <070>You <010>stop <110>traveling <070>:: from <170>$lastdir<100>. _]
+     }
+     {
+          #var travel 1;
+          #var lastdir @upfirst{%1};
+          #show <100>.. <170>G<070>oing <140>$lastdir<100>;
+          #var lastdir @revdir{$lastdir};
+          #send %1;
+     }
+}
+
+#act {Exits: %0}
+{
+    #if {$travel}
+    {
+         #regex {%0} {^-%w -%w$} {
+           #if {$travel}
+           {
+                #if {"$lastdir" == "&1"} {#var t &2} {#var t &1};
+                #if {"$lastdir" == "&1"} {#var newdir &2} {#var newdir &1};
+	            #show <100>.. <170>T<070>raveling <140>$newdir<100>;
+                #var lastdir @revdir{$newdir};
+                $newdir;
+           }
+         }
+         {
+              #var travel 0;
+              #show <100>[_ <110>S<010>topping <070>:: from <170>$lastdir<070> <100>_]
+         };
+    };
+}
+
+#act {You need to board a ship to travel the oceans.} {#if {$travel} {go}}
+#act {Alas, you cannot go that way} {#if {$travel} {go}}
+#act {Oof! It seems that %* is in your way.} {#if {$travel} {go}}
+#act {You need a boat to go there.} {#if {$travel} {go}}
+#act {Try flapping your arms!  (Couldn't hurt)} {#if {$travel} {go}}
+#act {You are too exhausted.} {#if {$travel} {go}}
+
+#show __ TRAVEL.tin

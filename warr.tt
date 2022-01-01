@@ -1,0 +1,129 @@
+#show {__ WARR.tt loaded __}
+
+#var class {warr}
+#var bag {portable.hole}
+#var bag2 {}
+#var bag3 {}
+#var qb {detrez.cube}
+#var skip_bashing {0}
+#macro {\C-r} {rescue $current_tank}
+
+#alias earth {rem strap.kuo;g girdle.studs;wear girdle.studs;say strength of stone;rem girdle.studs;p girdle.studs;wear strap.kuo}
+
+#act {< %1h/%2H %3v/%4V |bds %5|nop %6|cv %7|cc %8|ub %9|ss %10|ut %11|sk %12|hd %13|sod %18|ua %14|dsd %15|wu %16|ros %17|iw %19| >} {
+    #var curr_health %1;
+    #var max_health %2;
+    #math {health_percentage} {$curr_health.0 * 100 / $max_health.0};
+    #format {health_percentage} {%d} {$health_percentage};
+    #format {health_percentage} {%+3s} {$health_percentage};
+    #if {$health_percentage > $last_health_percentage || $health_percentage < $last_health_percentage || $last_health_percentage == 200} {
+        #show {(<170>$health_percentage%<070>)} 1 -7;
+        #var last_health_percentage $health_percentage;
+    };
+    #if {"%5" == "+"} {#var cd_bds 0} {#var cd_bds %5};
+    #if {"%6" == "+"} {#var cd_nop 0} {#var cd_nop %6};
+    #if {"%7" == "+"} {#var cd_cv 0} {#var cd_cv %7};
+    #if {"%9" == "+"} {#var cd_ub 0} {#var cd_ub %9};
+    #if {"%10" == "+"} {#var cd_ss 0} {#var cd_ss %10};
+    #if {"%11" == "+"} {#var cd_ut 0} {#var cd_ut %11};
+    #if {"%12" == "+"} {#var cd_sk 0} {#var cd_sk %12};
+    #if {"%13" == "+"} {#var cd_hd 0} {#var cd_hd %13};
+    #if {"%14" == "+"} {#var cd_ua 0} {#var cd_ua %14};
+    #if {"%15" == "+"} {#var cd_dsd 0} {#var cd_dsd %15};
+    #if {"%16" == "+"} {#var cd_wu 0} {#var cd_wu %16};
+    #if {"%17" == "+"} {#var cd_ros 0} {#var cd_ros %17};
+    #if {"%18" == "+"} {#var cd_sod 0} {#var cd_sod %18};
+    #if {"%19" == "+"} {#var cd_iw 0} {#var cd_iw %19};
+
+    #if {!$in_combat && $botting && $health_percentage < 95} {#if {!$cd_ut} {ut}};
+}
+
+#alias be {
+    #if {"%1" == "%w"} {t %1};
+    #if {!$cd_bds} {bds $target} {ss $target};
+}
+#alias di {quaff indigo $bag}
+#alias invis {quaff iridescent $bag}
+#alias arm {g protection;recite protection me}
+
+#act {You can't do that without solid ground underneath you!} { #if {$in_combat} {#var skip_bashing 1}; }
+#act {You would pass right through them!} { #if {$in_combat} {#var skip_bashing 1}; }
+
+#act {< T: %* TC: %* E: %* EC: %* EP: %w P: %w >} {
+    #var in_combat 1;
+    #var enemy_position %5;
+    #var position %6;
+    #var current_tank %1;
+
+    #if {$travel} {go};
+
+    #if {"$position" != "std" && $tried_to_stand != 1} {stand;#var tried_to_stand 1};
+
+    #if {"%4" == "nasty wounds" || "%4" == "pretty hurt" || "%4" == "awful"} {#var near_death 1};
+
+    #if {$auto_fight} {
+        #tick {fight} {
+            #if {!$in_combat} {#untick fight};
+            #if {!$cd_sod} {sod all} {
+                #if {!$cd_iw && $health_percentage < 80} {iw} {
+                    #if {"$enemy_position" == "std" && !$cd_ss && !$skip_bashing} {ss all} {
+                        #if {!$cd_ua} {ua all} {
+                            #if {!$cd_ros} {ros all} {
+                                #if {!$cd_sk} {sk all} {
+                                    #if {!$cd_cv} {cv all} {
+                                        #if {!$cd_ub && $health_percentage < 60} {ub} {
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } {2};
+    }
+}
+
+#macro {\C-f} {
+    #if {!$cd_sod} {sod agg} {
+        #if {!$cd_ua} {ua agg} {
+            #if {!$cd_ros} {ros agg} {
+                #if {!$cd_sk} {sk agg} {
+                    #if {!$cd_ss} {ss agg} {
+                        #if {!$cd_cv} {cv agg} {
+                            #if {!$cd_ub && $health_percentage < 60} {iw;ub} { };
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#alias {ke} {
+    #send {};
+    #if {"%1" == "%w"} {t %1};
+    #if {!$cd_bds} {bds $target} {
+        #if {!$cd_ss} {ss $target} {kill $target}
+    };
+}
+
+#alias count {
+    #var thecount 5;
+    #var target %1;
+    #var targetdir %2;
+
+    #tick {killcount} {
+        #if {$thecount == 0} {
+            #send {movealone $targetdir};
+            kill $target;
+            sos;
+            #untick killcount;
+        } {
+            gsay going --> ( $targetdir ) to attack $target in ... $thecount;
+            #math thecount {$thecount - 1};
+        }
+    } {1}
+}
+
+tsearch; tsearch; tbash; tbash; tfight; tasst; tloot; tloot; tbot; tbot; tdoors; tflee;

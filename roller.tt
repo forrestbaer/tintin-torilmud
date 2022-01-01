@@ -1,0 +1,25 @@
+#alias rl {#unact %*;#unvar %*;#read roller.tt}
+#act {^Strength:%s%d%sPower:%s%d$} {#var str %2;#var pow %5;};
+#act {Dexterity:%s%d%sIntelligence:%s%d%s$} {#var dex %2;#var int %5};
+#act {Agility:%s%d%sWisdom:%s%d%s$} {#var agi %2;#var wis %5};
+#act {Constitution:%s%d%sCharisma:%s%d%s$} {#var con %2;#var cha %5};
+
+#var perfects 0;
+#var decents 0;
+
+#action {To swap stats: enter the first stat name folowed by the second stat}
+{
+   #foreach {$str;$pow;$dex;$int;$agi;$wis;$con;$cha} {stat} {
+       #if {$stat >= 91 && $stat < 97} {#math {decents} {$decents + 1}};
+       #if {$stat >= 97} {#math {perfects} {$perfects + 1}};
+   };
+   #if {$perfects == 2 && $decents == 2} {#var reroll 0} { #if {$perfects == 0 && $decents == 4} {#var reroll 0} { #if {$perfects == 1 && $decents == 3} {#var reroll 0} {#var reroll 1} } };
+#nop   #if {$perfects == 4} {#var reroll 0} {#var reroll 1};
+   #show {=======================================};
+   #show { PERFECTS: $perfects };
+   #show { DECENTS : $decents };
+   #show {=======================================};
+   #var perfects 0;
+   #var decents 0;
+   #if {$reroll} {#send y} {#show BINGO}
+}

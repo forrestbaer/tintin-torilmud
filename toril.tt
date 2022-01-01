@@ -1,0 +1,440 @@
+#gag {Pardon?}
+#gag {You're not ready to perform another action!}
+#GAG {A momentary brilliant glow originating from}
+#GAG {Countless serpents begin to uncoil}
+#GAG {the brief enchantment begins to fade}
+#GAG {reptilian quickstrike ability!}
+#GAG {slithering and sliding their way down}
+#GAG {they descended, the serpents twist and twine}
+#SUBSTITUTE {within their circlet.} {<100>...<090>}
+
+#read travel.tt;
+
+#alias {mud} {#session toril torilmud.com 9999}
+#alias {testmud} {#session test test.torilmud.org 5000}
+#alias {rload} {#unact %*;#unvar %*;#unalias %*;#untick %*;#unmacro %*;#unfunction %*;#read toril.tt}
+
+#alias ww {say whirlwind}
+
+#alias {lblk} {rload;#read blk.tt}
+#alias {lwarr} {rload;#read warr.tt}
+#alias {lnec} {rload;#read nec.tt}
+#alias {lench} {rload;#read ench.tt}
+#alias {lrog} {rload;#read rogue.tt}
+
+#function {updateStatus} {
+    #format {s_t} {%+15s} {$target}; #show {<070>[<130>$s_t<070>]} 1 -25;
+    #if {$current_tells > 0} {#show {<070>t: <170>$current_tells<070>} 1 2} {#show {<070>-------} 1 2};
+    #if {$current_supp > 0} {#show {<020>s: <120>$current_supp<070>} 1 7} {#show {<070>-------} 1 8};
+    #if {$auto_loot} {#show {<170>loot<070>} 1 -30} {#show {<100>loot<070>} 1 -30};
+    #if {$auto_fight} {#show {<170>fight<070>} 1 -36} {#untick fight;#show {<100>fight<070>} 1 -36};
+    #if {$auto_assist} {#show {<170>asst<070>} 1 -41} {#show {<100>asst<070>} 1 -41};
+    #if {$auto_bash} {#show {<170>bash<070>} 1 -46} {#show {<100>bash<070>} 1 -46};
+    #if {$botting} {#show {<170>botting<070>} 1 -54} {#show {<100>botting<070>} 1 -54};
+    #if {$auto_doors} {#show {<170>doors<070>} 1 -60} {#show {<100>doors<070>} 1 -60};
+    #if {$auto_flee} {#show {<170>flee<070>} 1 -65} {#show {<100>flee<070>} 1 -65};
+    #if {$auto_search} {#show {<170>search<070>} 1 -72} {#show {<100>search<070>} 1 -72};
+    #var result 1;
+}
+#function {gettime} {#FORMAT {time} {%t} {%r};#FORMAT {test} {%t} {$time};#var result {$test}}
+#function {lcase} {#format {result} {%l} {%0}}
+#function {upfirst} {#format {result} {%n} {%1}}
+#function {getlen} {#format {result} {%L} {%1}}
+#function {isvar} {#if {"$%0" == "?%0"} {#var result 0} {#var result 1}}
+#function {rightalign} {
+  #format {colwidth} {%C};
+  #format {stringlength} {%L} {{%0}};
+  #math   {padding} {$colwidth - $stringlength};
+  #format {result} {%+${padding}s%s} {{} {%0}}
+}
+
+#split 1 0;
+
+#var last_health_percentage {200}
+#var current_tells {0}
+#var searching {0}
+#var auto_fight {0}
+#var auto_bash {0}
+#var auto_assist {1}
+#var auto_flee {0}
+#var auto_loot {0}
+#var auto_doors {0}
+#var afk_message {not at the keys, try me later}
+#var auto_pray {0}
+#var docast {0}
+
+#alias {of}
+{
+    #send {order followers \};
+    %0
+}
+
+#alias {o %* %*}
+{
+    #send {order %1 \};
+    %2
+}
+
+#alias ofke {of kill $target}
+#alias ofbe {of bash $target}
+#alias rm {of rescue rrema}
+
+#macro {\C-f} {flee}
+#macro {\C-l} {get all corpse}
+#macro {\C-p} {#buffer lock}
+
+#alias s {#send s;#var ld s}
+#alias w {#send w;#var ld w}
+#alias n {#send n;#var ld n}
+#alias e {#send e;#var ld e}
+#alias u {#send u;#var ld u}
+#alias d {#send d;#var ld d}
+
+#alias as {scan}
+
+#alias getglobe {.ne7s2wn;#5 {g bead};#5 {give bead 2.abjurer}}
+#alias getback {.s2e7nws;l in hole}
+
+#alias po {
+  #if {"%1" == "w"} {emote points to the room to the west.};
+  #if {"%1" == "e"} {emote points to the room to the east.};
+  #if {"%1" == "s"} {emote points to the room to the south.};
+  #if {"%1" == "n"} {emote points to the room to the north.};
+  #if {"%1" == "u"} {emote points to the room above.};
+  #if {"%1" == "d"} {emote points to the room below.};
+}
+
+#var fleetodir 0
+
+#action {You flee %1ward!} {
+     #var fled %1;
+     #if {"$fled" == "north"} {#var rfled s};
+     #if {"$fled" == "east"}  {#var rfled w};
+     #if {"$fled" == "south"} {#var rfled n};
+     #if {"$fled" == "west"}  {#var rfled e};
+     #if {"$fled" == "up"}    {#var rfled d};
+     #if {"$fled" == "down"}  {#var rfled u};
+     #if {$doret == 1} {ret};
+     #if {$fleetodir == 1} {#if {"$fled" != "$fdir"} {ret;$fdir;#var fleetodir 0} {#var fleetodir 0}}
+}
+
+#alias {fd} {
+	flee;
+	#var fleetodir 1;
+	#if {"%1" == "n"} {#var fdir north};
+	#if {"%1" == "s"} {#var fdir south};
+	#if {"%1" == "e"} {#var fdir east};
+	#if {"%1" == "w"} {#var fdir west};
+	#if {"%1" == "u"} {#var fdir up};
+	#if {"%1" == "d"} {#var fdir down}
+}
+
+#alias ret {#send $rfled}
+
+#act {The %1 seems to be closed} {
+    #var closed_name %1;
+    #IF {$auto_doors} {
+        open $closed_name $ld;
+        #var tried_open 1;
+    }
+}
+#act {It seems to be locked} {
+    #if {$tried_open} { unlock $closed_name $ld; }
+}
+#act {You do not have the proper key for that} {
+    #if {$tried_open} {#var tried_open 0};
+}
+#act {*Click*} {
+    #if {$tried_open} {#var tried_open 0};
+    #if {$auto_doors} { open $closed_name $ld; }
+}
+
+#act {PANIC!  You couldn't escape!} {
+    #if {$auto_flee} {flee};
+}
+#act {You're too busy trying to gain the initiative to flee!} {
+    #if {$auto_flee} {flee};
+}   
+
+#alias tloot {#math auto_loot !$auto_loot;@updateStatus{}};
+#alias tfight {#math auto_fight !$auto_fight;@updateStatus{}};
+#alias tasst {#math auto_assist !$auto_assist;@updateStatus{}};
+#alias tbash {#math auto_bash !$auto_bash;@updateStatus{}};
+#alias tbot {
+    #math botting !$botting;
+    #if {$botting && "$class" == "warr"} {
+        #tick {vigilance} {
+            #if {!$in_combat && !$following} {
+                #send l;    
+            }
+        } {10};
+    };
+    #if {$botting && "$class" == "ench"} {
+        #tick {botmem} {
+            #if {!$following} {
+                #if {!$ts_up && !$did_cast} {ts};
+                #if {$did_cast} {prep};
+            }
+        } {30};
+    };
+    #if {!$botting && "$class" == "ench"} {
+        #untick botmem;
+    };
+    #if {!$botting && "$class" == "warr"} {
+        #untick vigilance;
+    };
+    @updateStatus{};
+};
+#alias tdoors {#math auto_doors !$auto_doors;@updateStatus{}};
+#alias tflee {#math auto_flee !$auto_flee;@updateStatus{}};
+#alias tsearch {#math auto_search !$auto_search;@updateStatus{}};
+
+#act {%w has just given you %w consent.} {
+    #if {$botting} {
+        group %1;
+    }
+}
+
+#alias aa {assist $tank}
+#alias at {assist $tank}
+#alias ' {gsay %0}
+#alias gt {#grep tells you;#var current_tells 0;@updateStatus{}}
+#alias ga {#grep ASSOC;#var current_supp 0;@updateStatus{}}
+#alias gg {#grep group-}
+#alias ws {who sort}
+#alias wig {who ingroup s}
+#alias whois {tell katumi who %1}
+#alias stat {tell katumi stat %0}
+#alias find {tell katumi find %1}
+#alias hole {tell ynndchiarhlizz hole %1}
+#alias rift {tell ynndchiarhlizz rift %1}
+#alias bark {g bark;recite bark me}
+#alias arm {g protection;recite protection me}
+#alias tank {#var tank @upfirst{%1}}
+#alias sr {
+    #if {"%1" == ""} {#unvar search_target;search} {#var search_target %1;search $search_target};
+    #var searching 1;
+}
+#alias p {put %1 $bag}
+#alias p2 {put %1 $bag2}
+#alias p3 {put %1 $bag3}
+#alias pq {put %1 $qb}
+#alias g {get %1 $bag}
+#alias g2 {get %1 $bag2}
+#alias g3 {get %1 $bag3}
+#alias gq {get %1 $qb}
+#alias lib {l in $bag}
+#alias lib2 {l in $bag2}
+#alias lib3 {l in $bag3}
+#alias liq {l in $qb}
+#alias ma {movealone %1}
+
+#alias auciton {auction}
+#alias ls {l}
+
+#alias {lic} {#if {"%1" == ""} {#var licl 1} {#var licl %1};#loop {1} {$licl} {cnt} {l in $cnt.corpse}}
+#alias {lip} {#if {"%1" == ""} {#var lipl 1} {#var lipl %1};#loop {1} {$lipl} {cnt} {l in $cnt.portal}}
+#alias {loot} {#if {"%1" == ""} {#var lootl 1} {#var lootl %1};#loop {1} {$lootl} {cnt} {get all $cnt.corpse}}
+
+#alias {.%0} {#var cnt {}; #parse {%0} {char} {#if {"$char" >= "0" && "$char" <= "9"} {#var cnt $cnt$char};#elseif {"$cnt" == ""} {#send $char};#else {#$cnt #send $char;#var cnt {}}}}
+
+#act {Autosaving...} { l; }
+
+#act {You don't find anything.} {#if {$searching} {#if {&search_target} {search $search_target} {search}}}
+#act {You complete your search and conclude there is nothing to be found.} {
+    #var searching 0;
+    #if {$wolfing} {
+        
+    }
+}
+#act {You find %1!} {
+    #var searching 0;
+    #if {$auto_loot} {get all $search_target};
+    #if {$wolfing} {
+    };
+}
+
+#act {$tank attacks %* landing %* hits} {
+    #if {$auto_assist && !$assisting} {
+        assist $tank;
+        #var assisting 1;
+    }
+}
+
+#act {< P: %w %*>} {
+    #var in_combat 0;
+    #var position %1;
+    #if {"%2" == "(AFK) "} {#var afk 1} {#var afk 0};
+    #if {"$position" == "std"} {#var tried_to_stand 0};
+}
+
+#function do {
+    %1;
+}
+
+#alias glt {glance $target}
+
+#act {You flee %wward!} {
+    #if {$auto_fight} {#untick fight};
+    @docastCheck{};
+}
+
+#act {%* sends you sprawling} {
+    #if {$tried_to_stand != 1} {stand;#var tried_to_stand 1};
+    #if {$docast} {dc};
+}
+#act {%* does an acrobatic maneuver in battle, tripping you.} {
+    #if {$tried_to_stand != 1} {stand;#var tried_to_stand 1};
+    #if {$docast} {dc};
+}
+
+#act {You clamber to your feet} {#var tried_to_stand 0}
+
+#act {%1 clambers to %2 feet.} {
+        #if {$in_combat} {
+        #if {$auto_fight && $auto_bash} {ss};
+    }
+}
+
+#alias {t} {
+   #var target %1;
+   @updateStatus{};
+   con $target;
+}
+#var target none;
+
+#act {He looks at you, frowning in disappointment. He adds 'Rr you} {
+    #if {$wolfing} {
+        #delay {15} {give 10 p drung}
+    }
+}
+#act {Drung looks upset 'Gah, Rr here fine take it} {
+    #if {$wolfing} {
+        p all.coin;
+        u;
+        #tick {waitingforwolf} {#if {$in_combat} {#untick waitingforwolf} {ss werewolf}} {2};
+    }
+}
+#act {Drung pushes your money back in your face 'Rr you} {
+    #if {$wolfing} {
+        #delay {15} {give 10 p drung}
+    }
+}
+
+#var needbark 0;
+#var needarmor 0;
+#act {Your magic armor fades away.} {
+    #if {$wolfing} {
+        #var needarmor 1;
+    }
+}
+#act {Bands of magic armor wrap around you!} {
+    #if {$wolfing} {
+        #var needarmor 0;
+    }
+}
+#act {You feel less wooden.} {
+    #if {$wolfing} {
+        #var needbark 1;
+    }
+}
+#var botpoison ray;
+
+#act {You receive %* experience.} {
+    #if {$auto_fight} {#untick fight};
+    #if {$auto_loot} {loot;put all.coin $bag};
+    #if {$auto_search} {sr corpse};
+    #if {$auto_assist && $assisting} {#var assisting 0};
+    #if {$near_death} {#var near_death 0};
+    #if {$skip_bashing} {#var skip_bashing 0};
+    #if {$docast} {dco};
+    #if {$wolfing} {
+        #delay {3} {#if {!$in_combat} {
+        #if {$needbark} {bark;#var needbark 0};
+        #if {$needarmor} {arm;#var needarmor 0};
+        ap $botpoison;p all.figurine;d;g coins;give 10 p drung}}
+    };
+}
+
+/*** communications ***/
+
+#act {%w group-%2s '%3'$} { 
+    #if {$botting && "$class" == "blk"} {
+        #regex {%3} {%it{an|na}ks %*} {
+            #show &2;
+            #send &2;
+        };
+    };
+    #if {$botting && "$class" == "ench"} {
+        #if {"%3" == "hide"} {doht};
+        #if {"%3" == "fol"} {follow %1};
+        #if {"%3" == "fol self"} {follow me};
+        #if {"%3" == "mem"} {alert;prep;mem};
+        #if {"%3" == "prep"} {alert;prep;mem};
+        #if {"%3" == "stand"} {alert;stand};
+        #if {"%3" == "flee"} {flee};
+        #if {"%3" == "tele"} {tele};
+        #if {"%3" == "dim"} {dim %1};
+        #if {"%3" == "land"} {land};
+        #if {"%3" == "relo"} {relo %1};
+        #if {"%3" == "gate %w"} {%3};
+        #if {"%3" == "hs"} {hs %1};
+        #if {"%3" == "invis"} {invis %1};
+        #if {"%3" == "fly"} {fly %1};
+        #if {"%3" == "mf"} {mf %1};
+        #if {"%3" == "fly self"} {fly me};
+        #if {"%3" == "ts"} {ts};
+        #if {"%3" == "gi"} {gi %1};
+        #if {"%3" == "enlarge"} {enl %1};
+        #if {"%3" == "enl"} {enl %1};
+        #if {"%3" == "globe"} {gi %1};
+        #if {"%3" == "mb"} {mb %1};
+        #if {"%3" == "invis"} {invis %1};
+        #if {"%3" == "invis self"} {invis me};
+        #if {"%3" == "pause"} {#var following 1;gsay pausing};
+        #if {"%3" == "unpause"} {#var following 0;gsay UNpausing};
+        #if {"%3" == "ds"} {ds %1};
+        #if {"%3" == "bl"} {bl %1};
+        #if {"%3" == "ss"} {ss %1};
+        #if {"%3" == "ent %w"} {%3};
+        #if {"%3" == "ss"} {ss %1};
+        #if {"%3" == "appoint"} {appoint %1};
+    }
+}
+#act {%1 tells you '%2'$} {#if {"%1" != "%* %*"} { 
+    #math current_tells {$current_tells + 1};
+    @updateStatus{};
+    #if {$afk} { repl $afk_message; }; 
+    #if {$botting} { #if {"%2" == "consent"} { consent %1; } };
+}}
+#act {<Support>} {
+    #math current_supp {$current_supp + 1};
+    @updateStatus{};
+}
+#act {You are dead!} { 
+    #untick {fight}; 
+    #if {$botting && "$class" == "ench"} {
+        #delay {2} {
+            ent portal;
+            prep;
+            #sen {gsay Thanks! Doin a death mem now, will gsay when done.};
+            #var death_mem 1;
+        };
+    }
+}
+
+
+
+/* auto reconnect */
+
+#event {SESSION DISCONNECTED} {
+    #if {$botting} {
+        #gts #delay {20} {
+            #read toril.tt;
+            mud;
+        };
+    };
+}
+#event {SCREEN RESIZE} {
+    @updateStatus{};
+}
